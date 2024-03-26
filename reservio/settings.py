@@ -38,7 +38,7 @@ SECRET_KEY = os.environ['SECRET_KEY']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = ['bisp-restaurant-reservation.onrender.com']
+ALLOWED_HOSTS = ['bisp-restaurants-reservation.onrender.com']
 
 sys.path.insert(0, os.path.join(BASE_DIR, 'apps'))
 
