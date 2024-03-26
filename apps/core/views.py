@@ -35,6 +35,24 @@ class LoginView(generics.GenericAPIView):
 class RegistrationView(generics.CreateAPIView):
     permission_classes = [~IsAuthenticated]
     serializer_class = RegistrationSerializer
+    
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        username = serializer.validated_data.get('username')
+        password = serializer.validated_data.get('password')
+        user = authenticate(username=username, password=password)
+        if user is None:
+            raise ValidationError({'password': 'Username and/or password is incorrect'})
+        login(request, user)
+        serializer = UserSerializer(user)
+        refresh = RefreshToken.for_user(user=user)
+        data = {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": serializer.data
+        }
+        return Response(data)
 
 
 class UserMeView(generics.RetrieveAPIView):
