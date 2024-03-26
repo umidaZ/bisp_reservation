@@ -183,7 +183,7 @@ class MenuItemViewSet(ModelViewSet):
     permission_classes = [RestaurantPermissions, CanViewContent]
 
 
-class CustomerViewSet(UpdateModelMixin, RetrieveModelMixin, GenericViewSet):
+class CustomerViewSet(CreateModelMixin, UpdateModelMixin, RetrieveModelMixin, GenericViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
     
