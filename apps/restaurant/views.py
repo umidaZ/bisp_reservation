@@ -45,16 +45,20 @@ class RestaurantViewSet(ModelViewSet):
     def get_serializer_context(self):
         return {'request': self.request}
 
-    def delete(self, request, pk):
-        restaurant = get_object_or_404(self.get_queryset(), pk=pk)
-        if restaurant.orderitems.count() > 0:
-            return Response({'error': 'Restaurant cannot be deleted because it is associated with a reservation.'},
-                            status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        restaurant.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         serializer.save()
+
+    def get_queryset(self):
+        user_id = self.request.user.id
+        return super().get_queryset().filter(user_id=user_id)
 
 
 class CuisineViewList(ModelViewSet):
