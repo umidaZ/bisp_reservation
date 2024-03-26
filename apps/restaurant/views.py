@@ -186,11 +186,6 @@ class MenuItemViewSet(ModelViewSet):
 class CustomerViewSet(CreateModelMixin, UpdateModelMixin, RetrieveModelMixin, GenericViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
-    
-    def get_permissions(self):
-        if self.request.method == 'GET':
-            return [AllowAny()]
-        return [IsAuthenticated()]
 
     def patch(self, request, *args, **kwargs):
         instance = self.get_object()
