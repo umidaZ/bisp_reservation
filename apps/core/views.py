@@ -7,7 +7,9 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.views import APIView
 from rest_framework import status
 
+from apps.core.models import User
 from apps.core.serializers import LoginSerializer, UserSerializer, RegistrationSerializer
+from apps.restaurant.models import Customer, Restaurant
 
 
 class LoginView(generics.GenericAPIView):
@@ -35,17 +37,24 @@ class LoginView(generics.GenericAPIView):
 class RegistrationView(generics.CreateAPIView):
     permission_classes = [~IsAuthenticated]
     serializer_class = RegistrationSerializer
-    
-    def perform_create(self, serializer):
-        user = serializer.save()
-        refresh = RefreshToken.for_user(user)
-        data = {
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-            "user": UserSerializer(user).data
-        }
-        return Response(data, status=status.HTTP_201_CREATED)
 
+
+def perform_create(self, serializer):
+    user = serializer.save()
+    refresh = RefreshToken.for_user(user)
+    user_data = UserSerializer(user).data
+    data = {
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+        "user": user_data
+    }
+
+    if user.role == User.ROLE.CUSTOMER:
+        Customer.objects.create(user=user)
+    elif user.role == User.ROLE.RESTAURANT:
+        Restaurant.objects.create(user=user)
+
+    return Response(data, status=status.HTTP_201_CREATED)
 class UserMeView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
