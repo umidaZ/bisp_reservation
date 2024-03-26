@@ -145,7 +145,7 @@ class MenuItemsSerializer(serializers.ModelSerializer):
 class CustomerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Customer
-        fields = ['id', 'phone', 'birth_date']
+        fields = ['id', 'phone', 'birth_date', 'user']
 
 
 class PaymentStatusSerializer(serializers.ModelSerializer):

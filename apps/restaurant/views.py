@@ -10,6 +10,7 @@ from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.mixins import CreateModelMixin, UpdateModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
@@ -183,15 +184,16 @@ class MenuItemViewSet(ModelViewSet):
     permission_classes = [RestaurantPermissions, CanViewContent]
 
 
-class CustomerViewSet(CreateModelMixin, UpdateModelMixin, RetrieveModelMixin, GenericViewSet):
-    queryset = Customer.objects.all()
-    serializer_class = CustomerSerializer
+class CustomerUpdateByUserId(APIView):
+    def patch(self, request, user_id):
+        try:
+            customer = Customer.objects.get(user_id=user_id)
+        except Customer.DoesNotExist:
+            return Response({"error": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    def patch(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer = CustomerSerializer(customer, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
+        serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
