@@ -11,8 +11,10 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.mixins import CreateModelMixin, UpdateModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
+from rest_framework.permissions import IsAuthenticated, AllowAny
 
-from reservio.permissions import CanViewRestaurant, CanPostReview, CanReserveRestaurant
+
+from reservio.permissions import CanViewRestaurant, CanPostReview, IsRestaurantAdminOrReadOnly, CanManageReservations, CanViewContent, RestaurantPermissions
 from .filters import RestaurantFilter
 from .models import Restaurant, Cuisine, Review, ReviewReply, Table, Reservation, Customer, PaymentStatus, \
     MenuCategory, MenuItem
@@ -23,7 +25,7 @@ from .serializers import RestaurantSerializer, CuisineSerializer, ReviewSerializ
 
 
 class RestaurantViewSet(ModelViewSet):
-    permission_classes = [CanViewRestaurant]
+    permission_classes = [CanViewRestaurant, CanViewContent]
 
     pagination_class = DefaultPagination
 
@@ -58,6 +60,7 @@ class RestaurantViewSet(ModelViewSet):
 class CuisineViewList(ModelViewSet):
     queryset = Cuisine.objects.annotate(restaurants_count=Count('restaurants')).all()
     serializer_class = CuisineSerializer
+    permission_classes = [IsRestaurantAdminOrReadOnly]
 
     def delete(self, request, pk):
         cuisine = get_object_or_404(self.get_queryset(), pk=pk)
@@ -94,6 +97,7 @@ class ReviewViewSet(ReadOnlyModelViewSet):
 
 class ReviewReplyViewSet(ModelViewSet):
     serializer_class = ReviewReplySerializer
+    permission_classes = [RestaurantPermissions, CanViewContent]
 
     def get_queryset(self):
         review_id = self.kwargs['review_id']
@@ -113,6 +117,7 @@ class ReviewReplyViewSet(ModelViewSet):
 class TableViewSet(ModelViewSet):
     serializer_class = TableSerializer
     queryset = Table.objects.all()
+    permission_classes = [RestaurantPermissions, CanViewContent]
 
     def get_queryset(self):
         restaurant_id = self.kwargs.get('restaurant_id')
@@ -135,7 +140,7 @@ class TableViewSet(ModelViewSet):
 class ReservationViewSet(ModelViewSet):
     serializer_class = ReservationSerializer
     queryset = Reservation.objects.all()
-    permission_classes = [CanReserveRestaurant]
+    permission_classes = [CanManageReservations]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -170,23 +175,25 @@ class ReservationViewSet(ModelViewSet):
 class MenuCategoryViewSet(ModelViewSet):
     queryset = MenuCategory.objects.all()
     serializer_class = MenuCategorySerializer
+    permission_classes = [RestaurantPermissions, CanViewContent]
 
 
 class MenuItemViewSet(ModelViewSet):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemsSerializer
+    permission_classes = [RestaurantPermissions, CanViewContent]
 
 
 class CustomerViewSet(CreateModelMixin, UpdateModelMixin, RetrieveModelMixin, GenericViewSet):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
 
-    # permission_classes = [IsAuthenticated]
-    #
-    # def get_permissions(self):
-    #     if self.request.method == 'GET':
-    #         return [AllowAny()]
-    #     return [IsAuthenticated()]
+    permission_classes = [IsAuthenticated]
+    
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     @action(detail=False, methods=['GET', 'PUT'])
     def me(self, request):
