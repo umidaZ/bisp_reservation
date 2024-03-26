@@ -4,6 +4,7 @@ django-cors-headers
 django-debug-toolbar
 django-dynamic-raw-id
 django-filter
+django-environ
 django-templated-mail
 djangorestframework
 djangorestframework-simplejwt
