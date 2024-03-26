@@ -29,11 +29,11 @@ class Restaurant(models.Model):
     website = models.URLField(max_length=200, blank=True, null=True)
     instagram = models.CharField(max_length=100, blank=True, null=True)
     telegram = models.CharField(max_length=100, blank=True, null=True)
-    opening_time = models.TimeField()
-    closing_time = models.TimeField()
-    is_halal = models.BooleanField(default=False)
-    cuisines = models.ManyToManyField(Cuisine, related_name='restaurants', blank=True)
-    num_reviews = models.IntegerField(default=0)
+    opening_time = models.TimeField(null=True)
+    closing_time = models.TimeField(null=True)
+    is_halal = models.BooleanField(default=False, null=True)
+    cuisines = models.ManyToManyField(Cuisine, related_name='restaurants', blank=True, null=True)
+    num_reviews = models.IntegerField(default=0, null=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
 
