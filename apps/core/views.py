@@ -39,6 +39,11 @@ class RegistrationView(generics.CreateAPIView):
     serializer_class = RegistrationSerializer
 
 
+class RestaurantRegistrationView(generics.CreateAPIView):
+    permission_classes = [~IsAuthenticated]
+    serializer_class = RegistrationSerializer
+
+
 def perform_create(self, serializer):
     user = serializer.save()
     refresh = RefreshToken.for_user(user)

@@ -57,8 +57,6 @@ class Restaurant(models.Model):
     def save(self, *args, **kwargs):
         if not self.slug:
             self.slug = slugify(self.name)
-        else:
-            print(self.slug)
         super().save(*args, **kwargs)
 
 
