@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from rest_framework import status
 
 from apps.core.models import User
-from apps.core.serializers import LoginSerializer, UserSerializer, RegistrationSerializer
+from apps.core.serializers import LoginSerializer, UserSerializer, RegistrationSerializer, RestaurantSerializer
 from apps.restaurant.models import Customer, Restaurant
 
 
@@ -41,7 +41,7 @@ class RegistrationView(generics.CreateAPIView):
 
 class RestaurantRegistrationView(generics.CreateAPIView):
     permission_classes = [~IsAuthenticated]
-    serializer_class = RegistrationSerializer
+    serializer_class = RestaurantSerializer
 
 
 def perform_create(self, serializer):
