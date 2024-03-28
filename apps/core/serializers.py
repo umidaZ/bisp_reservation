@@ -22,50 +22,19 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(max_length=50, required=True)
 
 
-# class RegistrationSerializer(serializers.ModelSerializer):
-#     username = serializers.CharField(max_length=255, required=True)
-#     email = serializers.EmailField(max_length=254, required=True)
-#     password = serializers.CharField(min_length=6, max_length=50, write_only=True, required=True)
-#     confirm = serializers.CharField(min_length=6, max_length=50, write_only=True, required=True)
-#     role = serializers.IntegerField(max_value=2, min_value=1, required=True)
-
-#     def create(self, validated_data: dict):
-#         password = validated_data.pop('password')
-#         validated_data.pop("confirm")
-#         if not User.objects.filter(
-#                 Q(username=validated_data.get('username')) |
-#                 Q(email=validated_data.get('email'))
-#         ).exists():
-#             user = User(**validated_data)
-#             user.set_password(password)
-#             user.save()
-#             return user
-#         else:
-#             raise ValidationError({"Error": "These username and/or email exist!"})
-
-#     def validate(self, attrs: dict):
-#         if attrs.get("password") != attrs.get("confirm"):
-#             raise ValidationError({"confirm": 'Passwords must match'})
-#         return attrs
-
-#     class Meta:
-#         model = User
-#         fields = ['id', 'username', 'email', 'first_name', 'last_name','password', 'confirm', 'role']
-
-
 class RegistrationSerializer(serializers.ModelSerializer):
     username = serializers.CharField(max_length=255, required=True)
+    first_name = serializers.CharField(max_length=255, required=True)
+    last_name = serializers.CharField(max_length=255, required=True)
     email = serializers.EmailField(max_length=254, required=True)
     password = serializers.CharField(min_length=6, max_length=50, write_only=True, required=True)
     confirm = serializers.CharField(min_length=6, max_length=50, write_only=True, required=True)
-    role = serializers.IntegerField(max_value=2, min_value=0, required=True)  # Updated min_value to 0
     birth_date = serializers.DateField(required=False)
     phone_number = serializers.CharField(max_length=255, required=False)
 
     def create(self, validated_data: dict):
         password = validated_data.pop('password')
         validated_data.pop("confirm")
-        role = validated_data.pop('role')
         birth_date = validated_data.pop('birth_date', None)
         phone_number = validated_data.pop('phone_number', None)
 
@@ -73,18 +42,23 @@ class RegistrationSerializer(serializers.ModelSerializer):
                 Q(username=validated_data.get('username')) |
                 Q(email=validated_data.get('email'))
         ).exists():
-            user = User.objects.create_user(**validated_data, password=password)
+            user = User.objects.create_user(
+                username=validated_data['username'],
+                email=validated_data['email'],
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name'],
+                password=password,
+                role=User.ROLE.CUSTOMER)
 
-            if role == 2:
-                customer_data = {'user': user}
-                if birth_date:
-                    customer_data['birth_date'] = birth_date
-                if phone_number:
-                    customer_data['phone'] = phone_number
+            customer_data = {'user': user}
+            if birth_date:
+                customer_data['birth_date'] = birth_date
+            if phone_number:
+                customer_data['phone'] = phone_number
 
                 customer = Customer.objects.create(**customer_data)
 
-            return user
+            return validated_data
         else:
             raise ValidationError({"Error": "These username and/or email exist!"})
 
@@ -95,11 +69,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'confirm', 'role', 'birth_date', 'phone_number']
+        fields = ['id', 'username', 'email', 'password', 'confirm', 'birth_date', 'phone_number', 'first_name', 'last_name']
 
 
-class RestaurantSerializer(serializers.ModelSerializer):
+class RegisterRestaurantSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=255, required=True)
+    first_name = serializers.CharField(max_length=255, required=True)
+    last_name = serializers.CharField(max_length=255, required=True)
     email = serializers.EmailField(max_length=254, required=True)
     password = serializers.CharField(min_length=6, max_length=50, write_only=True, required=True)
     confirm = serializers.CharField(min_length=6, max_length=50, write_only=True, required=True)
@@ -120,7 +96,14 @@ class RestaurantSerializer(serializers.ModelSerializer):
         cuisines = validated_data.pop('cuisines', [])
 
         if not User.objects.filter(username=validated_data['username']).exists():
-            user = User.objects.create_user(**validated_data, password=password)
+            user = User.objects.create_user(
+                username=validated_data['username'],
+                email=validated_data['email'],
+                first_name=validated_data['first_name'],
+                last_name=validated_data['last_name'],
+                password=password,
+                role=User.ROLE.RESTAURANT)
+
 
             restaurant_data = {
                 'name': validated_data['name'],
@@ -136,11 +119,10 @@ class RestaurantSerializer(serializers.ModelSerializer):
             }
             restaurant = Restaurant.objects.create(**restaurant_data)
 
-            # Add cuisines if provided
             if cuisines:
                 restaurant.cuisines.add(*cuisines)
 
-            return user
+            return validated_data
         else:
             raise ValidationError({'error': 'Username already exists'})
 
@@ -150,6 +132,5 @@ class RestaurantSerializer(serializers.ModelSerializer):
         return attrs
 
     class Meta:
-        model = User
         fields = ['username', 'email', 'password', 'confirm', 'name', 'location', 'contact_number',
-                  'website', 'instagram', 'telegram', 'opening_time', 'closing_time', 'is_halal', 'cuisines']
+                  'website', 'instagram', 'telegram', 'opening_time', 'closing_time', 'is_halal', 'cuisines', 'first_name', 'last_name']
