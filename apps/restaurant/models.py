@@ -3,6 +3,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.conf import settings
 from django.contrib import admin
 from django.db import models
+from django.template.defaultfilters import slugify
 import json
 
 
@@ -17,6 +18,11 @@ class Cuisine(models.Model):
 
     class Meta:
         ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
 
 class Restaurant(models.Model):
@@ -47,6 +53,11 @@ class Restaurant(models.Model):
 
     class Meta:
         ordering = ['name']
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
 
 class Customer(models.Model):
@@ -95,6 +106,16 @@ class Table(models.Model):
 
 
 class Reservation(models.Model):
+    ACCEPTED = 'accepted'
+    REJECTED = 'rejected'
+    WAITING = 'waiting'
+    STATUS_CHOICES = [
+        (ACCEPTED, 'Accepted'),
+        (REJECTED, 'Rejected'),
+        (WAITING, 'Waiting'),
+
+    ]
+
     restaurant = models.ForeignKey(Restaurant, on_delete=models.PROTECT, related_name='reservations')
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
@@ -102,7 +123,8 @@ class Reservation(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     num_guests = models.PositiveIntegerField()
-    special_requests = models.TextField(blank=True)
+    special_requests = models.TextField()
+    status = models.CharField(max_length=8, blank=True, null=True, choices=STATUS_CHOICES, default=WAITING)
 
     def __str__(self):
         return f'{self.customer} - {self.table} - {self.date} {self.start_time}-{self.end_time}'
@@ -182,6 +204,11 @@ class MenuItem(models.Model):
 
     def __str__(self):
         return f"{self.name} - ${self.unit_price}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
 
 class Review(models.Model):

@@ -48,7 +48,8 @@ class RestaurantViewSet(ModelViewSet):
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer = self.get_serializer(
+            instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
@@ -62,7 +63,8 @@ class RestaurantViewSet(ModelViewSet):
 
 
 class CuisineViewList(ModelViewSet):
-    queryset = Cuisine.objects.annotate(restaurants_count=Count('restaurants')).all()
+    queryset = Cuisine.objects.annotate(
+        restaurants_count=Count('restaurants')).all()
     serializer_class = CuisineSerializer
     permission_classes = [IsRestaurantAdminOrReadOnly]
 
@@ -94,7 +96,8 @@ class ReviewViewSet(ReadOnlyModelViewSet):
         if review_count == 0:
             restaurant.rating = 0
         else:
-            average_rating = restaurant.reviews.aggregate(Avg('rating'))['rating__avg']
+            average_rating = restaurant.reviews.aggregate(Avg('rating'))[
+                'rating__avg']
             restaurant.rating = average_rating
         restaurant.save()
 
@@ -176,10 +179,45 @@ class ReservationViewSet(ModelViewSet):
         return not conflicts
 
 
+class ManageReservation(APIView):
+
+    def post(self, request, pk):
+        reservation = Reservation.objects.get(id=pk)
+        status = request.POST.get('status', Reservation.WAITING)
+        reservation.status = status
+        reservation.save()
+        return Response({"status": "ok"})
+
+
 class MenuCategoryViewSet(ModelViewSet):
     queryset = MenuCategory.objects.all()
     serializer_class = MenuCategorySerializer
     permission_classes = [RestaurantPermissions, CanViewContent]
+
+
+class MenuCategoriesView(APIView):
+    def get(self, request, restaurant_id):
+        restaurant = Restaurant.objects.get(id=restaurant_id)
+        categories = MenuCategory.objects.filter(restaurant=restaurant)
+        data = MenuCategorySerializer(categories, many=True).data
+        return Response({"status": "ok", "data": data})
+
+
+class MenuItemsView(APIView):
+    def get(self, request, category_id):
+        category = MenuCategory.objects.get(id=category_id)
+        items = MenuItem.objects.filter(menu=category)
+        data = MenuItemsSerializer(items, many=True).data
+        return Response({"status": "ok", "data": data})
+
+    def post(self, request):
+        serializer = MenuItemsSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+        else:
+            print(serializer.errors)
+
+        return Response({"status": "ok", "data": serializer.data})
 
 
 class MenuItemViewSet(ModelViewSet):
@@ -195,11 +233,11 @@ class CustomerUpdateByUserId(APIView):
         except Customer.DoesNotExist:
             return Response({"error": "Customer not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = CustomerSerializer(customer, data=request.data, partial=True)
+        serializer = CustomerSerializer(
+            customer, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 
 class PaymentStatusViewSet(ModelViewSet):

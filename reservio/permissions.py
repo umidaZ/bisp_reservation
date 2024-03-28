@@ -60,7 +60,7 @@ class CanManageReservations(permissions.BasePermission):
     """
 
     def has_permission(self, request, view):
-        return request.user.is_authenticated and request.user.role == User.ROLE.CUSTOMER
+        return request.user.is_authenticated and request.user.role in [User.ROLE.CUSTOMER, User.ROLE.ADMIN, User.ROLE.RESTAURANT]
 
 
 class CanPostReview(permissions.BasePermission):
