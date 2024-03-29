@@ -146,5 +146,5 @@ class RegisterRestaurantSerializer(serializers.Serializer):
         return attrs
 
     class Meta:
-        fields = ['id', 'username', 'email', 'password', 'confirm', 'name', 'location', 'contact_number',
+        fields = ['username', 'email', 'password', 'confirm', 'name', 'location', 'contact_number',
                   'website', 'instagram', 'telegram', 'opening_time', 'closing_time', 'is_halal', 'cuisines', 'first_name', 'last_name']
