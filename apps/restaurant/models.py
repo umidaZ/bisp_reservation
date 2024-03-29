@@ -96,7 +96,7 @@ class Table(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
     number = models.IntegerField()
     capacity = models.IntegerField()
-    time_slots = models.JSONField(default=list)
+    time_slots = models.JSONField(default=list, null=True, blank=True)
 
     def __str__(self):
         return f'{self.restaurant}. {self.capacity} seats in table {self.number}'
@@ -123,7 +123,7 @@ class Reservation(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     num_guests = models.PositiveIntegerField()
-    special_requests = models.TextField()
+    special_requests = models.TextField(null=True, blank=True)
     status = models.CharField(max_length=8, blank=True, null=True, choices=STATUS_CHOICES, default=WAITING)
 
     def __str__(self):
