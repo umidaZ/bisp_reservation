@@ -65,22 +65,22 @@ class RestaurantRegistrationView(generics.CreateAPIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
 
-# def perform_create(self, serializer):
-#     user = serializer.save()
-#     refresh = RefreshToken.for_user(user)
-#     user_data = UserSerializer(user).data
-#     data = {
-#         "access": str(refresh.access_token),
-#         "refresh": str(refresh),
-#         "user": user_data
-#     }
+def perform_create(self, serializer):
+    user = serializer.save()
+    refresh = RefreshToken.for_user(user)
+    user_data = UserSerializer(user).data
+    data = {
+        "access": str(refresh.access_token),
+        "refresh": str(refresh),
+        "user": user_data
+    }
 
-#     if user.role == User.ROLE.CUSTOMER:
-#         Customer.objects.create(user=user)
-#     elif user.role == User.ROLE.RESTAURANT:
-#         Restaurant.objects.create(user=user)
+    if user.role == User.ROLE.CUSTOMER:
+        Customer.objects.create(user=user)
+    elif user.role == User.ROLE.RESTAURANT:
+        Restaurant.objects.create(user=user)
 
-#     return Response(data, status=status.HTTP_201_CREATED)
+    return Response(data, status=status.HTTP_201_CREATED)
 
 
 class UserMeView(generics.RetrieveAPIView):
