@@ -39,16 +39,6 @@ class RegistrationView(generics.CreateAPIView):
     permission_classes = [~IsAuthenticated]
     serializer_class = RegistrationSerializer
 
-    def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        user = User.objects.get(id=serializer.data['user_id'])
-        token = RefreshToken.for_user(user)
-        data = {"token": str(token), "data": serializer.data}
-
-        return Response(data, status=status.HTTP_201_CREATED)
-
 
 class RestaurantRegistrationView(generics.CreateAPIView):
     permission_classes = [~IsAuthenticated]
