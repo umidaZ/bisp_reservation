@@ -9,7 +9,8 @@ from apps.restaurant.models import Customer, Restaurant
 
 class UserCreateSerializer(BaseUserCreateSerializer):
     class Meta(BaseUserCreateSerializer.Meta):
-        fields = ['id', 'username', 'password', 'email', 'first_name', 'last_name']
+        fields = ['id', 'username', 'password',
+                  'email', 'first_name', 'last_name']
 
 
 class UserSerializer(BaseUserSerializer):
@@ -27,8 +28,10 @@ class RegistrationSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(max_length=255, required=True)
     last_name = serializers.CharField(max_length=255, required=True)
     email = serializers.EmailField(max_length=254, required=True)
-    password = serializers.CharField(min_length=6, max_length=50, write_only=True, required=True)
-    confirm = serializers.CharField(min_length=6, max_length=50, write_only=True, required=True)
+    password = serializers.CharField(
+        min_length=6, max_length=50, write_only=True, required=True)
+    confirm = serializers.CharField(
+        min_length=6, max_length=50, write_only=True, required=True)
     birth_date = serializers.DateField(required=False)
     phone_number = serializers.CharField(max_length=255, required=False)
 
@@ -60,7 +63,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
             return validated_data
         else:
-            raise ValidationError({"Error": "These username and/or email exist!"})
+            raise ValidationError(
+                {"Error": "These username and/or email exist!"})
 
     def validate(self, attrs: dict):
         if attrs.get("password") != attrs.get("confirm"):
@@ -69,7 +73,8 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password', 'confirm', 'birth_date', 'phone_number', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'password', 'confirm',
+                  'birth_date', 'phone_number', 'first_name', 'last_name']
 
 
 class RegisterRestaurantSerializer(serializers.Serializer):
@@ -77,8 +82,10 @@ class RegisterRestaurantSerializer(serializers.Serializer):
     first_name = serializers.CharField(max_length=255, required=True)
     last_name = serializers.CharField(max_length=255, required=True)
     email = serializers.EmailField(max_length=254, required=True)
-    password = serializers.CharField(min_length=6, max_length=50, write_only=True, required=True)
-    confirm = serializers.CharField(min_length=6, max_length=50, write_only=True, required=True)
+    password = serializers.CharField(
+        min_length=6, max_length=50, write_only=True, required=True)
+    confirm = serializers.CharField(
+        min_length=6, max_length=50, write_only=True, required=True)
     name = serializers.CharField(max_length=255)
     location = serializers.CharField(max_length=255)
     contact_number = serializers.CharField(max_length=20)
@@ -88,7 +95,9 @@ class RegisterRestaurantSerializer(serializers.Serializer):
     opening_time = serializers.TimeField(required=False)
     closing_time = serializers.TimeField(required=False)
     is_halal = serializers.BooleanField(default=False)
-    cuisines = serializers.ListField(child=serializers.IntegerField(), required=False)
+    photos = serializers.ImageField(allow_empty_file=True, required=False)
+    cuisines = serializers.ListField(
+        child=serializers.IntegerField(), required=False)
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -104,7 +113,6 @@ class RegisterRestaurantSerializer(serializers.Serializer):
                 password=password,
                 role=User.ROLE.RESTAURANT)
 
-
             restaurant_data = {
                 'name': validated_data['name'],
                 'location': validated_data['location'],
@@ -115,16 +123,22 @@ class RegisterRestaurantSerializer(serializers.Serializer):
                 'opening_time': validated_data.get('opening_time'),
                 'closing_time': validated_data.get('closing_time'),
                 'is_halal': validated_data.get('is_halal'),
+                'photos': validated_data.get('photos'),
                 'user': user,
             }
             restaurant = Restaurant.objects.create(**restaurant_data)
 
             if cuisines:
                 restaurant.cuisines.add(*cuisines)
-
-            return validated_data
+            return restaurant
         else:
             raise ValidationError({'error': 'Username already exists'})
+
+    def to_representation(self, instance):
+        representation = instance.__dict__
+        del representation['_state']
+        del representation['photos']
+        return representation
 
     def validate(self, attrs):
         if attrs['password'] != attrs['confirm']:
@@ -132,5 +146,5 @@ class RegisterRestaurantSerializer(serializers.Serializer):
         return attrs
 
     class Meta:
-        fields = ['username', 'email', 'password', 'confirm', 'name', 'location', 'contact_number',
+        fields = ['id', 'username', 'email', 'password', 'confirm', 'name', 'location', 'contact_number',
                   'website', 'instagram', 'telegram', 'opening_time', 'closing_time', 'is_halal', 'cuisines', 'first_name', 'last_name']

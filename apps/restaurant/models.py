@@ -38,7 +38,7 @@ class Restaurant(models.Model):
     opening_time = models.TimeField(null=True)
     closing_time = models.TimeField(null=True)
     is_halal = models.BooleanField(default=False, null=True)
-    cuisines = models.ManyToManyField(Cuisine, related_name='restaurants', blank=True, null=True)
+    cuisines = models.ManyToManyField(Cuisine, related_name='restaurants', blank=True)
     num_reviews = models.IntegerField(default=0, null=True)
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
@@ -189,6 +189,14 @@ class MenuCategory(models.Model):
 
     def __str__(self):
         return f"{self.name} Menu at {self.restaurant}"
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
+    class Meta:
+        unique_together = ('slug', 'restaurant')
 
 
 class MenuItem(models.Model):

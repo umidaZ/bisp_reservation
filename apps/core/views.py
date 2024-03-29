@@ -3,7 +3,7 @@ from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
 from rest_framework.views import APIView
 from rest_framework import status
 
@@ -22,7 +22,8 @@ class LoginView(generics.GenericAPIView):
         password = serializer.validated_data.get('password')
         user = authenticate(username=username, password=password)
         if user is None:
-            raise ValidationError({'password': 'Username and/or password is incorrect'})
+            raise ValidationError(
+                {'password': 'Username and/or password is incorrect'})
         login(request, user)
         serializer = UserSerializer(user)
         refresh = RefreshToken.for_user(user=user)
@@ -43,6 +44,16 @@ class RestaurantRegistrationView(generics.CreateAPIView):
     permission_classes = [~IsAuthenticated]
     serializer_class = RegisterRestaurantSerializer
 
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        user = User.objects.get(id=serializer.data['user_id'])
+        token = RefreshToken.for_user(user)
+        data = {"token": str(token), "data": serializer.data}
+
+        return Response(data, status=status.HTTP_201_CREATED)
+
 
 def perform_create(self, serializer):
     user = serializer.save()
@@ -60,13 +71,15 @@ def perform_create(self, serializer):
         Restaurant.objects.create(user=user)
 
     return Response(data, status=status.HTTP_201_CREATED)
+
+
 class UserMeView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = UserSerializer
 
     def get_object(self):
         return self.request.user
-    
+
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]

@@ -53,11 +53,10 @@ class RestaurantAdmin(admin.ModelAdmin):
 
 @admin.register(models.Customer)
 class CustomerAdmin(admin.ModelAdmin):
-    list_display = ('first_name', 'last_name', 'email', 'phone', 'birth_date', 'reserved_restaurants')
+    list_display = ('email', 'phone', 'birth_date', 'reserved_restaurants')
     search_fields = ('first_name__istartswith', 'last_name__istartswith')
     list_select_related = ['user']
     autocomplete_fields = ['user']
-    ordering = ['user__first_name', 'user__last_name']
     list_editable = ('phone', 'birth_date')
     list_per_page = 10
 

@@ -43,8 +43,7 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'restaurant', 'customer', 'rating', 'comment', 'timestamp']
 
     def create(self, validated_data):
-        restaurant_id = self.context['restaurant_id']
-        return Review.objects.create(restaurant_id=restaurant_id, **validated_data)
+        return Review.objects.create(**validated_data)
 
 
 class ReviewReplySerializer(serializers.ModelSerializer):
