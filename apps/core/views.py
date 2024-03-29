@@ -39,6 +39,16 @@ class RegistrationView(generics.CreateAPIView):
     permission_classes = [~IsAuthenticated]
     serializer_class = RegistrationSerializer
 
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        user = User.objects.get(id=serializer.data['user_id'])
+        token = RefreshToken.for_user(user)
+        data = {"token": str(token), "data": serializer.data}
+
+        return Response(data, status=status.HTTP_201_CREATED)
+
 
 class RestaurantRegistrationView(generics.CreateAPIView):
     permission_classes = [~IsAuthenticated]
@@ -55,22 +65,22 @@ class RestaurantRegistrationView(generics.CreateAPIView):
         return Response(data, status=status.HTTP_201_CREATED)
 
 
-def perform_create(self, serializer):
-    user = serializer.save()
-    refresh = RefreshToken.for_user(user)
-    user_data = UserSerializer(user).data
-    data = {
-        "access": str(refresh.access_token),
-        "refresh": str(refresh),
-        "user": user_data
-    }
+# def perform_create(self, serializer):
+#     user = serializer.save()
+#     refresh = RefreshToken.for_user(user)
+#     user_data = UserSerializer(user).data
+#     data = {
+#         "access": str(refresh.access_token),
+#         "refresh": str(refresh),
+#         "user": user_data
+#     }
 
-    if user.role == User.ROLE.CUSTOMER:
-        Customer.objects.create(user=user)
-    elif user.role == User.ROLE.RESTAURANT:
-        Restaurant.objects.create(user=user)
+#     if user.role == User.ROLE.CUSTOMER:
+#         Customer.objects.create(user=user)
+#     elif user.role == User.ROLE.RESTAURANT:
+#         Restaurant.objects.create(user=user)
 
-    return Response(data, status=status.HTTP_201_CREATED)
+#     return Response(data, status=status.HTTP_201_CREATED)
 
 
 class UserMeView(generics.RetrieveAPIView):
