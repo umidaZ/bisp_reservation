@@ -75,7 +75,6 @@ class CuisineViewList(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [CanPostReview]
     queryset = Review.objects.all()
 
     def list(self, request):
