@@ -61,7 +61,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
 
                 customer = Customer.objects.create(**customer_data)
 
-            return validated_data
+            return customer
         else:
             raise ValidationError(
                 {"Error": "These username and/or email exist!"})
@@ -70,6 +70,13 @@ class RegistrationSerializer(serializers.ModelSerializer):
         if attrs.get("password") != attrs.get("confirm"):
             raise ValidationError({"confirm": 'Passwords must match'})
         return attrs
+
+    def to_representation(self, instance):
+        representation = instance.__dict__
+        representation['first_name'] = instance.user.first_name
+        representation['last_name'] = instance.user.last_name
+        del representation['_state']
+        return representation
 
     class Meta:
         model = User
