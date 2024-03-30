@@ -14,25 +14,34 @@ from apps.restaurant.models import Customer, Restaurant
 
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
-
+    # def post(self, request, *args, **kwargs):
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     username = serializer.validated_data.get('username')
+    #     password = serializer.validated_data.get('password')
+    #     user = authenticate(username=username, password=password)
+    #     if user is None:
+    #         raise ValidationError(
+    #             {'password': 'Username and/or password is incorrect'})
+    #     login(request, user)
+    #     serializer = UserSerializer(user)
+    #     refresh = RefreshToken.for_user(user=user)
+    #     data = {
+    #         "access": str(refresh.access_token),
+    #         "refresh": str(refresh),
+    #         "user": serializer.data
+    #     }
+    #     return Response(data)
+    
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        username = serializer.validated_data.get('username')
-        password = serializer.validated_data.get('password')
-        user = authenticate(username=username, password=password)
-        if user is None:
-            raise ValidationError(
-                {'password': 'Username and/or password is incorrect'})
-        login(request, user)
-        serializer = UserSerializer(user)
-        refresh = RefreshToken.for_user(user=user)
-        data = {
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
-            "user": serializer.data
-        }
-        return Response(data)
+        self.perform_create(serializer)
+        user = User.objects.get(id=serializer.data['user_id'])
+        token = RefreshToken.for_user(user)
+        data = {"token": str(token), "data": serializer.data}
+
+        return Response(data, status=status.HTTP_201_CREATED)
 
 
 class RegistrationView(generics.CreateAPIView):
