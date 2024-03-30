@@ -30,7 +30,7 @@ class Restaurant(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     location = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    photos = models.ImageField(upload_to='restaurant_photos/', blank=True, verbose_name='Restaurant image')
+    photos = models.ImageField(upload_to='restaurant/restaurant_photos/', blank=True, verbose_name='Restaurant image')
     contact_number = models.CharField(max_length=20)
     website = models.URLField(max_length=200, blank=True, null=True)
     instagram = models.CharField(max_length=100, blank=True, null=True)
