@@ -14,21 +14,25 @@ from apps.restaurant.models import Customer, Restaurant
 
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
+
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = authenticate(
-            request, username=serializer.validated_data['username'], password=serializer.validated_data['password'])
-
-        if user:
-            login(request, user)
-            token = RefreshToken.for_user(user)
-            data = {"token": str(token), "user": UserSerializer(user).data}
-            return Response(data, status=status.HTTP_200_OK)
-        else:
+        username = serializer.validated_data.get('username')
+        password = serializer.validated_data.get('password')
+        user = authenticate(username=username, password=password)
+        if user is None:
             raise ValidationError(
-                {'error': 'Invalid username or password'})
-
+                {'password': 'Username and/or password is incorrect'})
+        login(request, user)
+        serializer = UserSerializer(user)
+        refresh = RefreshToken.for_user(user=user)
+        data = {
+            "access": str(refresh.access_token),
+            "refresh": str(refresh),
+            "user": serializer.data
+        }
+        return Response(data)
 
 
 class RegistrationView(generics.CreateAPIView):
