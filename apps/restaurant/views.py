@@ -11,7 +11,7 @@ from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
-from reservio.permissions import CanPostReview, IsRestaurantAdminOrReadOnly, CanManageReservations, CanViewContent, RestaurantPermissions
+# from reservio.permissions import CanPostReview, IsRestaurantAdminOrReadOnly, CanManageReservations, CanViewContent, RestaurantPermissions
 from .filters import RestaurantFilter
 from .models import Restaurant, Cuisine, Review, ReviewReply, Table, Reservation, Customer, PaymentStatus, \
     MenuCategory, MenuItem
@@ -62,7 +62,7 @@ class CuisineViewList(ModelViewSet):
     queryset = Cuisine.objects.annotate(
         restaurants_count=Count('restaurants')).all()
     serializer_class = CuisineSerializer
-    permission_classes = [IsRestaurantAdminOrReadOnly]
+    # permission_classes = [IsRestaurantAdminOrReadOnly]
 
     def delete(self, request, pk):
         cuisine = get_object_or_404(self.get_queryset(), pk=pk)
@@ -75,19 +75,12 @@ class CuisineViewList(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    queryset = Review.objects.all()
 
-    def list(self, request):
-        reviews = Review.objects.filter(restaurant_id=request.GET.get('restaurant_pk'))
-        serializer = ReviewSerializer(reviews, many=True)
-        return Response(serializer.data, status=200)
+    def get_queryset(self):
+        return Review.objects.filter(restaurant_id=self.kwargs['restaurant_pk'])
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        review = self.perform_create(serializer)
-        return Response(serializer.data, status=201)
-
+    def get_serializer_context(self):
+        return {'restaurant_id': self.kwargs['restaurant_pk']}
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -98,15 +91,14 @@ class ReviewViewSet(ModelViewSet):
         if review_count == 0:
             restaurant.rating = 0
         else:
-            average_rating = restaurant.reviews.aggregate(Avg('rating'))[
-                'rating__avg']
+            average_rating = restaurant.reviews.aggregate(Avg('rating'))['rating__avg']
             restaurant.rating = average_rating
         restaurant.save()
 
 
 class ReviewReplyViewSet(ModelViewSet):
     serializer_class = ReviewReplySerializer
-    permission_classes = [RestaurantPermissions]
+    # permission_classes = [RestaurantPermissions]
 
     def get_queryset(self):
         review_id = self.kwargs['review_id']
@@ -126,7 +118,7 @@ class ReviewReplyViewSet(ModelViewSet):
 class TableViewSet(ModelViewSet):
     serializer_class = TableSerializer
     queryset = Table.objects.all()
-    permission_classes = [RestaurantPermissions, CanViewContent]
+    # permission_classes = [RestaurantPermissions, CanViewContent]
 
     def get_queryset(self):
         restaurant_id = self.kwargs.get('restaurant_id')
@@ -149,7 +141,7 @@ class TableViewSet(ModelViewSet):
 class ReservationViewSet(ModelViewSet):
     serializer_class = ReservationSerializer
     queryset = Reservation.objects.all()
-    permission_classes = [CanManageReservations]
+    # permission_classes = [CanManageReservations]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -191,11 +183,11 @@ class ManageReservation(APIView):
 class MenuCategoryViewSet(ModelViewSet):
     queryset = MenuCategory.objects.all()
     serializer_class = MenuCategorySerializer
-    permission_classes = [RestaurantPermissions, CanViewContent]
+    # permission_classes = [RestaurantPermissions, CanViewContent]
 
 
 class MenuCategoriesView(APIView):
-    permission_classes = [IsRestaurantAdminOrReadOnly]
+    # permission_classes = [IsRestaurantAdminOrReadOnly]
     def get(self, request, restaurant_id):
         restaurant = Restaurant.objects.get(id=restaurant_id)
         categories = MenuCategory.objects.filter(restaurant=restaurant)
@@ -228,7 +220,7 @@ class MenuItemsView(APIView):
 class MenuItemViewSet(ModelViewSet):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemsSerializer
-    permission_classes = [RestaurantPermissions, CanViewContent]
+    # permission_classes = [RestaurantPermissions, CanViewContent]
 
 
 class CustomerUpdateByUserId(APIView):
