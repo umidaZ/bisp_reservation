@@ -81,7 +81,7 @@ class CustomerAdmin(admin.ModelAdmin):
 class ReservationAdmin(admin.ModelAdmin):
     dynamic_raw_id_fields = ('table',)
     list_display = ('customer', 'restaurant', 'date', 'num_guests')
-    list_filter = ('restaurant', 'status',)
+    list_filter = ('restaurant',)
     search_fields = ('customer__first_name__istartswith', 'customer__last_name__istartswith', 'restaurant__name__istartswith')
     list_editable = ('date', 'num_guests',)
     list_per_page = 10

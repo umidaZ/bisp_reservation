@@ -31,7 +31,4 @@ urlpatterns = [
     path('api/token/', TokenCreateView.as_view(), name='token_create'),
     path('__debug__/', include(debug_toolbar.urls)),
     path('api/auth/', include('apps.core.urls'))
-] 
-
-if settings.DEBUG:
-  urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
