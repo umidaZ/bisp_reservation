@@ -30,7 +30,8 @@ class Restaurant(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     location = models.CharField(max_length=255)
     description = models.TextField(blank=True, null=True)
-    photos = models.ImageField(upload_to='restaurant/restaurant_photos/', blank=True, verbose_name='Restaurant image')
+    photos = models.ImageField(
+        upload_to='restaurant_photos/', blank=True, verbose_name='Restaurant image')
     contact_number = models.CharField(max_length=20)
     website = models.URLField(max_length=200, blank=True, null=True)
     instagram = models.CharField(max_length=100, blank=True, null=True)
@@ -38,10 +39,11 @@ class Restaurant(models.Model):
     opening_time = models.TimeField(null=True)
     closing_time = models.TimeField(null=True)
     is_halal = models.BooleanField(default=False, null=True)
-    cuisines = models.ManyToManyField(Cuisine, related_name='restaurants', blank=True)
+    cuisines = models.ManyToManyField(
+        Cuisine, related_name='restaurants', blank=True)
     num_reviews = models.IntegerField(default=0, null=True)
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.name
@@ -63,7 +65,8 @@ class Restaurant(models.Model):
 class Customer(models.Model):
     phone = models.CharField(max_length=255)
     birth_date = models.DateField(null=True)
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
 
     def __str__(self):
         return f'{self.user.first_name} {self.user.last_name}'
@@ -74,7 +77,7 @@ class Customer(models.Model):
 
     @admin.display(ordering='user__last_name')
     def last_name(self):
-        return  self.user.last_name
+        return self.user.last_name
 
     def email(self):
         return self.user.email
@@ -96,7 +99,7 @@ class Table(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE)
     number = models.IntegerField()
     capacity = models.IntegerField()
-    time_slots = models.JSONField(default=list, null=True, blank=True)
+    time_slots = models.JSONField(default=list, blank=True)
 
     def __str__(self):
         return f'{self.restaurant}. {self.capacity} seats in table {self.number}'
@@ -116,7 +119,8 @@ class Reservation(models.Model):
 
     ]
 
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.PROTECT, related_name='reservations')
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.PROTECT, related_name='reservations')
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     table = models.ForeignKey(Table, on_delete=models.CASCADE)
     date = models.DateField()
@@ -124,14 +128,16 @@ class Reservation(models.Model):
     end_time = models.TimeField()
     num_guests = models.PositiveIntegerField()
     special_requests = models.TextField(null=True, blank=True)
-    status = models.CharField(max_length=8, blank=True, null=True, choices=STATUS_CHOICES, default=WAITING)
+    status = models.CharField(max_length=8, blank=True,
+                              null=True, choices=STATUS_CHOICES, default=WAITING)
 
     def __str__(self):
         return f'{self.customer} - {self.table} - {self.date} {self.start_time}-{self.end_time}'
 
     def save(self, *args, **kwargs):
         if not self.is_available_for_time_slot():
-            raise ValidationError("The selected time slot is not available for this table.")
+            raise ValidationError(
+                "The selected time slot is not available for this table.")
         super().save(*args, **kwargs)
 
         date = self.date.strftime('%d-%m-%Y')
@@ -148,7 +154,8 @@ class Reservation(models.Model):
 
     def is_available_for_time_slot(self):
         # Check if the selected time slot is available for the table
-        reservations = Reservation.objects.filter(table=self.table, date=self.date)
+        reservations = Reservation.objects.filter(
+            table=self.table, date=self.date)
 
         # Convert reservations' start and end times to tuples of (hour, minute)
         reserved_time_slots = [
@@ -183,7 +190,8 @@ class Reservation(models.Model):
 
 
 class MenuCategory(models.Model):
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='menu')
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name='menu')
     name = models.CharField(max_length=255)
     slug = models.SlugField(blank=True)
 
@@ -200,14 +208,15 @@ class MenuCategory(models.Model):
 
 
 class MenuItem(models.Model):
-    menu = models.ForeignKey(MenuCategory, on_delete=models.CASCADE, related_name='items')
+    menu = models.ForeignKey(
+        MenuCategory, on_delete=models.CASCADE, related_name='items')
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(blank=True)
     unit_price = models.DecimalField(
-         max_digits=6,
-         decimal_places=2,
-         validators=[MinValueValidator(1)])
+        max_digits=6,
+        decimal_places=2,
+        validators=[MinValueValidator(1)])
     photo = models.ImageField(upload_to='menu_photos/', blank=True)
 
     def __str__(self):
@@ -220,9 +229,11 @@ class MenuItem(models.Model):
 
 
 class Review(models.Model):
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='reviews')
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name='reviews')
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    rating = models.PositiveSmallIntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    rating = models.PositiveSmallIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(5)])
     comment = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
@@ -237,9 +248,13 @@ class Review(models.Model):
         super().delete(*args, **kwargs)
         self.restaurant.update_num_reviews()
 
+    class Meta:
+        ordering = ['-id']
+
 
 class ReviewReply(models.Model):
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='reply')
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name='reply')
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
     review = models.ForeignKey(Review, on_delete=models.CASCADE)
     reply_text = models.TextField()
@@ -258,7 +273,8 @@ class PaymentStatus(models.Model):
     ]
 
     reservation = models.OneToOneField('Reservation', on_delete=models.CASCADE)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=PENDING)
+    status = models.CharField(
+        max_length=20, choices=STATUS_CHOICES, default=PENDING)
 
     def __str__(self):
         return f"{self.reservation.customer} - {self.reservation.restaurant} - {self.status}"
@@ -266,13 +282,15 @@ class PaymentStatus(models.Model):
 
 class Payment(models.Model):
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, null=True, blank=True)
-    reservation = models.OneToOneField(Reservation, on_delete=models.CASCADE, null=True, blank=True)
-    amount = models.DecimalField(max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, null=True, blank=True)
+    reservation = models.OneToOneField(
+        Reservation, on_delete=models.CASCADE, null=True, blank=True)
+    amount = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(0)])
     payment_method = models.CharField(max_length=50)
     transaction_id = models.CharField(max_length=100)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Payment of {self.amount} made by {self.customer.first_name} at {self.timestamp}"
-

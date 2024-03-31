@@ -15,7 +15,6 @@ class RestaurantSerializer(serializers.ModelSerializer):
     cuisines = CuisineSerializer(many=True)
     rating = serializers.SerializerMethodField()
     num_reviews = serializers.SerializerMethodField()
-    photos = serializers.ImageField()
 
     class Meta:
         model = Restaurant
@@ -23,14 +22,6 @@ class RestaurantSerializer(serializers.ModelSerializer):
             ['id', 'name', 'slug', 'location', 'description', 'photos', 'contact_number', 'website',
              'instagram', 'telegram', 'opening_time', 'closing_time', 'rating', 'num_reviews', 'is_halal', 'cuisines']
 
-    def get_photos(self, obj):
-        # Assuming 'photos' field is an ImageField and 'upload_to' is 'restaurant_photos/'
-        if obj.photos:
-            return obj.photos.url
-        else:
-            return None 
-        
-    
     def get_rating(self, obj):
         # Retrieve all reviews associated with this restaurant
         reviews = obj.reviews.all()
@@ -44,13 +35,18 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
     def get_num_reviews(self, obj):  # Add this method
         return obj.reviews.count()
-    
 
 
 class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ['id', 'restaurant', 'customer', 'rating', 'comment', 'timestamp']
+
+    def to_representation(self, instance):
+        representation = instance.__dict__
+        representation['customer'] = instance.customer.user.first_name
+        del representation['_state']
+        return representation
 
     def create(self, validated_data):
         return Review.objects.create(**validated_data)
@@ -107,6 +103,12 @@ class ReservationSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+    def to_representation(self, instance):
+        representation = instance.__dict__
+        representation['restaurant'] = instance.restaurant.name
+        del representation['_state']
+        return representation
 
     def validate(self, data):
         table = data['table']

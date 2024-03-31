@@ -8,10 +8,13 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.mixins import CreateModelMixin, UpdateModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet
-from reservio.permissions import CanPostReview, IsRestaurantAdminOrReadOnly, CanManageReservations, CanViewContent, RestaurantPermissions
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
+from rest_framework.permissions import IsAuthenticated, AllowAny
+
+from reservio.permissions import CanViewRestaurant, CanPostReview, IsRestaurantAdminOrReadOnly, CanManageReservations, CanViewContent, RestaurantPermissions
 from .filters import RestaurantFilter
 from .models import Restaurant, Cuisine, Review, ReviewReply, Table, Reservation, Customer, PaymentStatus, \
     MenuCategory, MenuItem
@@ -75,10 +78,11 @@ class CuisineViewList(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [CanPostReview]
+    permission_classes = [CanViewContent]
 
     def list(self, request):
-        reviews = Review.objects.filter(restaurant_id=request.GET.get('restaurant_pk'))
+        reviews = Review.objects.filter(
+            restaurant_id=request.GET.get('restaurant'))
         serializer = ReviewSerializer(reviews, many=True)
         return Response(serializer.data, status=200)
 
@@ -87,7 +91,6 @@ class ReviewViewSet(ModelViewSet):
         serializer.is_valid(raise_exception=True)
         review = self.perform_create(serializer)
         return Response(serializer.data, status=201)
-
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -126,7 +129,7 @@ class ReviewReplyViewSet(ModelViewSet):
 class TableViewSet(ModelViewSet):
     serializer_class = TableSerializer
     queryset = Table.objects.all()
-    permission_classes = [RestaurantPermissions, CanViewContent]
+    permission_classes = [CanViewContent]
 
     def get_queryset(self):
         restaurant_id = self.kwargs.get('restaurant_id')
@@ -178,7 +181,23 @@ class ReservationViewSet(ModelViewSet):
         return not conflicts
 
 
+class RestaurantReservation(APIView):
+
+    def get(self, request, restaurant_id):
+        restaurant = Restaurant.objects.get(id=restaurant_id)
+        reservations = Reservation.objects.filter(restaurant=restaurant)
+        serializer = ReservationSerializer(reservations, many=True)
+        return Response({"status": "ok", "data": serializer.data})
+
+
 class ManageReservation(APIView):
+
+    def get(self, request):
+        customer_id = request.GET.get('customer_id')
+        customer = Customer.objects.get(id=customer_id)
+        reservations = Reservation.objects.filter(customer=customer)
+        serializer = ReservationSerializer(reservations, many=True)
+        return Response({"status": "ok", "data": serializer.data})
 
     def post(self, request, pk):
         reservation = Reservation.objects.get(id=pk)
@@ -196,6 +215,7 @@ class MenuCategoryViewSet(ModelViewSet):
 
 class MenuCategoriesView(APIView):
     permission_classes = [IsRestaurantAdminOrReadOnly]
+
     def get(self, request, restaurant_id):
         restaurant = Restaurant.objects.get(id=restaurant_id)
         categories = MenuCategory.objects.filter(restaurant=restaurant)
@@ -204,7 +224,8 @@ class MenuCategoriesView(APIView):
 
     def post(self, request, restaurant_id):
         restaurant = Restaurant.objects.get(id=restaurant_id)
-        category = MenuCategory.objects.create(restaurant=restaurant, name=request.POST.get("name"))
+        category = MenuCategory.objects.create(
+            restaurant=restaurant, name=request.POST.get("name"))
         return Response({"status": "ok", "category": category.name}, status=201)
 
 
