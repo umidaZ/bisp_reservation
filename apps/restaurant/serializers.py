@@ -16,6 +16,7 @@ class RestaurantSerializer(serializers.ModelSerializer):
     rating = serializers.SerializerMethodField()
     num_reviews = serializers.SerializerMethodField()
 
+
     class Meta:
         model = Restaurant
         fields = \

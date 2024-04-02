@@ -25,8 +25,6 @@ from .serializers import RestaurantSerializer, CuisineSerializer, ReviewSerializ
 
 
 class RestaurantViewSet(ModelViewSet):
-    # permission_classes = [CanViewRestaurant, CanViewContent]
-
     pagination_class = DefaultPagination
 
     queryset = Restaurant.objects.all()

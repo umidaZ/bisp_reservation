@@ -3,7 +3,7 @@ from rest_framework import generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework_simplejwt.tokens import AccessToken
 from rest_framework.views import APIView
 from rest_framework import status
 
@@ -26,11 +26,12 @@ class LoginView(generics.GenericAPIView):
                 {'password': 'Username and/or password is incorrect'})
         login(request, user)
         serializer = UserSerializer(user)
-        refresh = RefreshToken.for_user(user=user)
+        refresh = AccessToken.for_user(user=user)
         data = {
             "access": str(refresh.access_token),
             "refresh": str(refresh),
-            "user": serializer.data
+            "user": serializer.data,
+            "customer": user.customer.id
         }
         return Response(data)
 
@@ -44,7 +45,7 @@ class RegistrationView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         user = User.objects.get(id=serializer.data['user_id'])
-        token = RefreshToken.for_user(user)
+        token = AccessToken.for_user(user)
         data = {"token": str(token), "data": serializer.data}
 
         return Response(data, status=status.HTTP_201_CREATED)
@@ -59,7 +60,7 @@ class RestaurantRegistrationView(generics.CreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         user = User.objects.get(id=serializer.data['user_id'])
-        token = RefreshToken.for_user(user)
+        token = AccessToken.for_user(user)
         data = {"token": str(token), "data": serializer.data}
 
         return Response(data, status=status.HTTP_201_CREATED)
@@ -67,7 +68,7 @@ class RestaurantRegistrationView(generics.CreateAPIView):
 
 def perform_create(self, serializer):
     user = serializer.save()
-    refresh = RefreshToken.for_user(user)
+    refresh = AccessToken.for_user(user)
     user_data = UserSerializer(user).data
     data = {
         "access": str(refresh.access_token),
@@ -98,7 +99,7 @@ class LogoutView(APIView):
         try:
             refresh_token = request.data.get('refresh_token')
             if refresh_token:
-                token = RefreshToken(refresh_token)
+                token = AccessToken(refresh_token)
                 token.blacklist()
                 return Response({"message": "Logout successful."}, status=status.HTTP_205_RESET_CONTENT)
             else:

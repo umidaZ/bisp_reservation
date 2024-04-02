@@ -110,6 +110,14 @@ WSGI_APPLICATION = 'reservio.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(default=env('DATABASE'))
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql_psycopg2',
+    #     'NAME': 'reservio',
+    #     'USER': 'postgres',
+    #     'PASSWORD': '73770213',
+    #     'HOST': 'localhost',
+    #     'PORT': '5432',
+    # }
 }
 
 # Password validation
