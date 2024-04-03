@@ -12,6 +12,13 @@ from apps.core.serializers import LoginSerializer, RegisterRestaurantSerializer,
 from apps.restaurant.models import Customer, Restaurant
 
 
+from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
+from rest_framework_simplejwt.tokens import AccessToken
+from django.contrib.auth import authenticate, login
+from rest_framework import generics
+from .serializers import LoginSerializer, UserSerializer
+
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginSerializer
 
@@ -22,17 +29,19 @@ class LoginView(generics.GenericAPIView):
         password = serializer.validated_data.get('password')
         user = authenticate(username=username, password=password)
         if user is None:
-            raise ValidationError(
-                {'password': 'Username and/or password is incorrect'})
+            raise ValidationError({'password': 'Username and/or password is incorrect'})
         login(request, user)
         serializer = UserSerializer(user)
         refresh = AccessToken.for_user(user=user)
         data = {
-            "access": str(refresh.access_token),
+            "access": str(refresh),
             "refresh": str(refresh),
-            "user": serializer.data,
-            "customer": user.customer.id
+            "user": serializer.data
         }
+        if user.role == User.ROLE.CUSTOMER:
+            data['customer'] = user.customer.id
+        elif user.role == User.ROLE.RESTAURANT:
+            data['restaurant'] = user.restaurant.id
         return Response(data)
 
 
@@ -71,7 +80,7 @@ def perform_create(self, serializer):
     refresh = AccessToken.for_user(user)
     user_data = UserSerializer(user).data
     data = {
-        "access": str(refresh.access_token),
+        "access": str(refresh),
         "refresh": str(refresh),
         "user": user_data
     }
