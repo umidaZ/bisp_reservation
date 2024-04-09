@@ -135,7 +135,7 @@ class Reservation(models.Model):
         return f'{self.customer} - {self.table} - {self.date} {self.start_time}-{self.end_time}'
 
     def save(self, *args, **kwargs):
-        if not self.is_available_for_time_slot():
+        if not self.id and not self.is_available_for_time_slot():
             raise ValidationError(
                 "The selected time slot is not available for this table.")
         super().save(*args, **kwargs)

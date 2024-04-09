@@ -3,7 +3,7 @@ from django.urls import path
 from . import views
 
 router = routers.DefaultRouter()
-# router.register('restaurants', views.RestaurantViewSet, basename='restaurants')
+router.register('restaurants', views.RestaurantViewSet, basename='restaurants')
 router.register('cuisines', views.CuisineViewList)
 # router.register('reservations', views.ReservationViewSet)
 router.register('payment_statuses', views.PaymentStatusViewSet)
@@ -13,7 +13,7 @@ router.register('payment_statuses', views.PaymentStatusViewSet)
 
 
 urlpatterns = [
-    path('restaurants/', views.RestaurantViewSet.as_view({'post': 'create', 'get': 'list', 'patch': 'update'}), name='restaurants'),
+    # path('restaurants/', views.RestaurantViewSet.as_view({'post': 'create', 'get': 'list', 'patch': 'update'}), name='restaurants'),
     path('restaurants/<int:restaurant_id>/reviews/<int:review_id>/review_reply/', views.ReviewReplyViewSet.as_view({'get': 'list', 'post': 'create'}), name='review-reply'),
     path('restaurants/<int:restaurant_id>/tables/', views.TableViewSet.as_view({'get': 'list', 'post': 'create'}), name='restaurant-tables'),
     path('manage-reservation/<int:pk>/', views.ManageReservation.as_view(), name='manage-reservation'),

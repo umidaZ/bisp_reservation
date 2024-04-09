@@ -84,7 +84,7 @@ class CanViewContent(permissions.BasePermission):
 
         # Allow customers to create, update, and delete their own reviews
         if request.method == 'POST':
-            return request.user.is_authenticated and request.user.role == User.ROLE.CUSTOMER
+            return request.user.is_authenticated and request.user.role == User.ROLE.RESTAURANT
 
         # Default deny for other methods
         return False
