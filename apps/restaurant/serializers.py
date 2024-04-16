@@ -37,22 +37,21 @@ class RestaurantSerializer(serializers.ModelSerializer):
     def get_num_reviews(self, obj):  # Add this method
         return obj.reviews.count()
     
-    def create(self, validated_data):
-        return super().create(validated_data)
-    
+
     def update(self, instance, validated_data):
         # Handle update for nested fields here
-        cuisines_data = validated_data.pop('cuisines', None)
-        
-        # Update instance fields as needed
-        instance.location = validated_data.get('location', instance.location)
-        instance.save()
+        cuisines_data = validated_data.get('cuisines', [])
 
-        # Example handling for Many-to-Many field (cuisines)
-        if cuisines_data is not None:
-            instance.cuisines.set(cuisines_data)
+        # Clear existing cuisines associated with the instance
+        instance.cuisines.clear()
+
+        # Add the updated cuisines
+        for cuisine_data in cuisines_data:
+            instance.cuisines.add(cuisine_data)
 
         return instance
+    
+    
 
 
 class ReviewSerializer(serializers.ModelSerializer):
