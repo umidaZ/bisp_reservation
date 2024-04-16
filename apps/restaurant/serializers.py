@@ -12,7 +12,7 @@ class CuisineSerializer(serializers.ModelSerializer):
 
 
 class RestaurantSerializer(serializers.ModelSerializer):
-    cuisines = CuisineSerializer(many=True)
+    # cuisines = CuisineSerializer(many=True)
     rating = serializers.SerializerMethodField()
     num_reviews = serializers.SerializerMethodField()
 
