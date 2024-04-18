@@ -129,6 +129,16 @@ class TableViewSet(ModelViewSet):
     queryset = Table.objects.all()
     permission_classes = [CanViewContent]
 
+    def perform_create(self, serializer):
+        try:
+            # Example: Saving the serializer with validated data to create the object
+            table = serializer.save()
+            print(f"Created table object: {table}")  # Debugging statement
+            return table
+        except Exception as e:
+            print(f"Error creating table: {e}")  # Log the error
+            return None
+
     def get_queryset(self):
         restaurant_id = self.kwargs.get('restaurant_id')
         return Table.objects.filter(restaurant_id=restaurant_id)
@@ -136,15 +146,22 @@ class TableViewSet(ModelViewSet):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        table = self.perform_create(serializer)
 
-        # Extract time slots from request data and add them to the table
-        time_slots_data = request.data.get('time_slots', [])
-        table.time_slots = time_slots_data
-        table.save()
+        try:
+            table = self.perform_create(serializer)
+            if table is None:
+                raise ValueError("Table creation failed - perform_create returned None")
 
-        headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+            # Extract time slots from request data and add them to the table
+            time_slots_data = request.data.get('time_slots', [])
+            table.time_slots = time_slots_data
+            table.save()
+
+            serialized_table = self.get_serializer(table).data
+            return Response(serialized_table, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 
 
 class ReservationViewSet(ModelViewSet):
@@ -190,19 +207,26 @@ class RestaurantReservation(APIView):
 
 class ManageReservation(APIView):
 
-    def get(self, request):
-        customer_id = request.GET.get('customer_id')
-        customer = Customer.objects.get(id=customer_id)
-        reservations = Reservation.objects.filter(customer=customer)
-        serializer = ReservationSerializer(reservations, many=True)
-        return Response({"status": "ok", "data": serializer.data})
+    def get(self, request, pk):  # Update to accept 'pk'
+        try:
+            reservation = Reservation.objects.get(id=pk)
+            serializer = ReservationSerializer(reservation)
+            return Response({"status": "ok", "data": serializer.data})
+        except Reservation.DoesNotExist:
+            return Response({"status": "error", "message": "Reservation not found."}, status=status.HTTP_404_NOT_FOUND)
 
     def post(self, request, pk):
-        reservation = Reservation.objects.get(id=pk)
-        status = request.POST.get('status', Reservation.WAITING)
-        reservation.status = status
-        reservation.save()
-        return Response({"status": "ok"})
+        try:
+            reservation = Reservation.objects.get(id=pk)
+            status = request.data.get('status', Reservation.WAITING)
+            reservation.status = status
+            reservation.save()
+
+            # Serialize the updated reservation
+            serializer = ReservationSerializer(reservation)
+            return Response({"status": "ok", "data": serializer.data})
+        except Reservation.DoesNotExist:
+            return Response({"status": "error", "message": "Reservation not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
 class MenuCategoryViewSet(ModelViewSet):
@@ -222,9 +246,11 @@ class MenuCategoriesView(APIView):
 
     def post(self, request, restaurant_id):
         restaurant = Restaurant.objects.get(id=restaurant_id)
-        category = MenuCategory.objects.create(
-            restaurant=restaurant, name=request.POST.get("name"))
-        return Response({"status": "ok", "category": category.name}, status=201)
+        serializer = MenuCategorySerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(restaurant=restaurant)  # Save with restaurant instance
+            return Response({"status": "ok", "category": serializer.data}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MenuItemsView(APIView):

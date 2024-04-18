@@ -101,7 +101,7 @@ class TableSerializer(serializers.ModelSerializer):
 class ReservationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Reservation
-        fields = ['id', 'restaurant', 'customer', 'table', 'date', 'start_time', 'end_time', 'num_guests', 'special_requests']
+        fields = ['id', 'restaurant', 'customer', 'table', 'date', 'start_time', 'end_time', 'num_guests', 'special_requests', 'status']
 
     def create(self, validated_data):
         reservation = Reservation.objects.create(**validated_data)
