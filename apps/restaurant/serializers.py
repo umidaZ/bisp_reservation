@@ -38,18 +38,18 @@ class RestaurantSerializer(serializers.ModelSerializer):
         return obj.reviews.count()
     
 
-    def update(self, instance, validated_data):
-        # Handle update for nested fields here
-        cuisines_data = validated_data.get('cuisines', [])
+    # def update(self, instance, validated_data):
+    #     # Handle update for nested fields here
+    #     cuisines_data = validated_data.get('cuisines', [])
 
-        # Clear existing cuisines associated with the instance
-        instance.cuisines.clear()
+    #     # Clear existing cuisines associated with the instance
+    #     instance.cuisines.clear()
 
-        # Add the updated cuisines
-        for cuisine_data in cuisines_data:
-            instance.cuisines.add(cuisine_data)
+    #     # Add the updated cuisines
+    #     for cuisine_data in cuisines_data:
+    #         instance.cuisines.add(cuisine_data)
 
-        return instance
+    #     return instance
     
     
 
