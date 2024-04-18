@@ -5,7 +5,7 @@ from . import views
 router = routers.DefaultRouter()
 router.register('restaurants', views.RestaurantViewSet, basename='restaurants')
 router.register('cuisines', views.CuisineViewList)
-# router.register('reservations', views.ReservationViewSet)
+router.register('reservations', views.ReservationViewSet)
 router.register('payment_statuses', views.PaymentStatusViewSet)
 
 # restaurant_router = routers.NestedDefaultRouter(router, 'restaurants', lookup='restaurant')

@@ -4,6 +4,7 @@ from django.db.models import Avg, Value
 from django.db.models.aggregates import Count
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
+from apps.core.models import User
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
 from rest_framework.decorators import action
@@ -79,10 +80,17 @@ class ReviewViewSet(ModelViewSet):
     permission_classes = [CanViewContent]
 
     def list(self, request):
-        reviews = Review.objects.filter(
-            restaurant_id=request.GET.get('restaurant'))
-        serializer = ReviewSerializer(reviews, many=True)
-        return Response(serializer.data, status=200)
+        # Check if the authenticated user is a restaurant owner
+        if request.user.role == User.ROLE.RESTAURANT:
+            restaurant = request.user.restaurant  # Assuming the user has a related restaurant
+            reviews = Review.objects.filter(restaurant=restaurant)
+            serializer = ReviewSerializer(reviews, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        else:
+            return Response(
+                {"status": "error", "message": "User must be authenticated as a restaurant owner."},
+                status=status.HTTP_403_FORBIDDEN
+            )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -207,26 +215,41 @@ class RestaurantReservation(APIView):
 
 class ManageReservation(APIView):
 
-    def get(self, request, pk):  # Update to accept 'pk'
-        try:
-            reservation = Reservation.objects.get(id=pk)
-            serializer = ReservationSerializer(reservation)
+    def get(self, request, pk=None):  # Make 'pk' optional by setting default value to None
+        if pk is not None:
+            # Fetch a specific reservation
+            try:
+                reservation = Reservation.objects.get(id=pk)
+                serializer = ReservationSerializer(reservation)
+                return Response({"status": "ok", "data": serializer.data})
+            except Reservation.DoesNotExist:
+                return Response({"status": "error", "message": "Reservation not found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # List reservations for the current user
+            user = request.user  # Assuming user authentication is set up correctly
+            reservations = Reservation.objects.filter(customer=user.customer)
+            serializer = ReservationSerializer(reservations, many=True)
             return Response({"status": "ok", "data": serializer.data})
-        except Reservation.DoesNotExist:
-            return Response({"status": "error", "message": "Reservation not found."}, status=status.HTTP_404_NOT_FOUND)
 
-    def post(self, request, pk):
-        try:
-            reservation = Reservation.objects.get(id=pk)
-            status = request.data.get('status', Reservation.WAITING)
-            reservation.status = status
-            reservation.save()
-
-            # Serialize the updated reservation
-            serializer = ReservationSerializer(reservation)
-            return Response({"status": "ok", "data": serializer.data})
-        except Reservation.DoesNotExist:
-            return Response({"status": "error", "message": "Reservation not found."}, status=status.HTTP_404_NOT_FOUND)
+    def post(self, request, pk=None):  # Same here, 'pk' is optional
+        if pk is not None:
+            # Handle POST request for updating a specific reservation
+            try:
+                reservation = Reservation.objects.get(id=pk)
+                status_value = request.data.get('status', Reservation.WAITING)
+                reservation.status = status_value
+                reservation.save()
+                serializer = ReservationSerializer(reservation)
+                return Response({"status": "ok", "data": serializer.data})
+            except Reservation.DoesNotExist:
+                return Response({"status": "error", "message": "Reservation not found."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            # Handle POST request for creating a new reservation
+            serializer = ReservationSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response({"status": "ok", "data": serializer.data}, status=status.HTTP_201_CREATED)
+            return Response({"status": "error", "message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MenuCategoryViewSet(ModelViewSet):

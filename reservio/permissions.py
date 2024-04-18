@@ -82,9 +82,13 @@ class CanViewContent(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        # Allow customers to create, update, and delete their own reviews
-        if request.method == 'POST':
-            return request.user.is_authenticated and request.user.role == User.ROLE.RESTAURANT
+        # Allow restaurant owners to view content
+        if request.user.is_authenticated and request.user.role == User.ROLE.RESTAURANT:
+            return True
 
-        # Default deny for other methods
+        # Allow customers to create, update, and delete their own reviews
+        if request.method == 'POST' and request.user.is_authenticated and request.user.role == User.ROLE.CUSTOMER:
+            return True
+
+        # Default deny for other methods or unauthorized users
         return False
