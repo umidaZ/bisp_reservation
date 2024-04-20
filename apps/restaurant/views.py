@@ -79,24 +79,20 @@ class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
     permission_classes = [CanViewContent]
 
-    def list(self, request):
-        # Check if the authenticated user is a restaurant owner
-        if request.user.role == User.ROLE.RESTAURANT:
-            restaurant = request.user.restaurant  # Assuming the user has a related restaurant
-            reviews = Review.objects.filter(restaurant=restaurant)
-            serializer = ReviewSerializer(reviews, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        if self.request.user.role == User.ROLE.RESTAURANT:
+            restaurant = self.request.user.restaurant
+            return Review.objects.filter(restaurant=restaurant)
+        elif 'restaurant_id' in self.kwargs:
+            return Review.objects.filter(restaurant_id=self.kwargs['restaurant_id'])
         else:
-            return Response(
-                {"status": "error", "message": "User must be authenticated as a restaurant owner."},
-                status=status.HTTP_403_FORBIDDEN
-            )
+            return Review.objects.none()
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         review = self.perform_create(serializer)
-        return Response(serializer.data, status=201)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def perform_create(self, serializer):
         instance = serializer.save()
@@ -107,8 +103,7 @@ class ReviewViewSet(ModelViewSet):
         if review_count == 0:
             restaurant.rating = 0
         else:
-            average_rating = restaurant.reviews.aggregate(Avg('rating'))[
-                'rating__avg']
+            average_rating = restaurant.reviews.aggregate(Avg('rating'))['rating__avg']
             restaurant.rating = average_rating
         restaurant.save()
 
