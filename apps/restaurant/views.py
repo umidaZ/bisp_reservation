@@ -77,16 +77,12 @@ class CuisineViewList(ModelViewSet):
 
 class ReviewViewSet(ModelViewSet):
     serializer_class = ReviewSerializer
-    permission_classes = [CanViewContent]
+    # permission_classes = [CanViewContent]
 
     def get_queryset(self):
-        if self.request.user.role == User.ROLE.RESTAURANT:
-            restaurant = self.request.user.restaurant
-            return Review.objects.filter(restaurant=restaurant)
-        elif 'restaurant_id' in self.kwargs:
+        if 'restaurant_id' in self.kwargs:
             return Review.objects.filter(restaurant_id=self.kwargs['restaurant_id'])
-        else:
-            return Review.objects.none()
+        return Review.objects.all()
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -97,6 +93,7 @@ class ReviewViewSet(ModelViewSet):
     def perform_create(self, serializer):
         instance = serializer.save()
         self.update_restaurant_rating(instance.restaurant)
+        return instance  # Return the created instance
 
     def update_restaurant_rating(self, restaurant):
         review_count = restaurant.reviews.count()
@@ -107,10 +104,9 @@ class ReviewViewSet(ModelViewSet):
             restaurant.rating = average_rating
         restaurant.save()
 
-
 class ReviewReplyViewSet(ModelViewSet):
     serializer_class = ReviewReplySerializer
-    # permission_classes = [RestaurantPermissions]
+    permission_classes = [RestaurantPermissions]
 
     def get_queryset(self):
         review_id = self.kwargs['review_id']
