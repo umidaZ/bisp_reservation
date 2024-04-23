@@ -4,6 +4,7 @@ from django.db.models import Avg, Value
 from django.db.models.aggregates import Count
 from django.db.models.functions import Coalesce
 from django.shortcuts import get_object_or_404
+from django.http import Http404
 from apps.core.models import User
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import status
@@ -268,11 +269,21 @@ class MenuCategoriesView(APIView):
             serializer.save(restaurant=restaurant)  # Save with restaurant instance
             return Response({"status": "ok", "category": serializer.data}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def delete(self, request, restaurant_id, category_id):
+        try:
+            restaurant = Restaurant.objects.get(id=restaurant_id)
+            category = MenuCategory.objects.get(id=category_id, restaurant=restaurant)
+            category.delete()
+            return Response({"status": "ok", "message": "Category deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except MenuCategory.DoesNotExist:
+            return Response({"status": "error", "message": "Category not found."}, status=status.HTTP_404_NOT_FOUND)
 
 
+# View for list and create operations
 class MenuItemsView(APIView):
     def get(self, request, category_id):
-        category = MenuCategory.objects.get(id=category_id)
+        category = get_object_or_404(MenuCategory, id=category_id)
         items = MenuItem.objects.filter(menu=category)
         data = MenuItemsSerializer(items, many=True).data
         return Response({"status": "ok", "data": data})
@@ -280,16 +291,18 @@ class MenuItemsView(APIView):
     def post(self, request, category_id):
         serializer = MenuItemsSerializer(data=request.data)
         if serializer.is_valid():
-            category = MenuCategory.objects.get(id=category_id)
+            category = get_object_or_404(MenuCategory, id=category_id)
             serializer.validated_data['menu'] = category
             serializer.save()
             return Response({"status": "ok", "data": serializer.data}, status=status.HTTP_201_CREATED)
         else:
             return Response({"status": "error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-        
-    def patch(self, request, category_id, item_id):  # Added item_id parameter
+
+# View for retrieve, update, delete operations
+class MenuItemDetailView(APIView):
+    def patch(self, request, category_id, item_id):
         try:
-            item = MenuItem.objects.get(id=item_id)
+            item = MenuItem.objects.get(id=item_id, menu__id=category_id)
         except MenuItem.DoesNotExist:
             raise NotFound(detail="Menu item not found")
 
@@ -299,12 +312,11 @@ class MenuItemsView(APIView):
             return Response({"status": "ok", "data": serializer.data}, status=status.HTTP_200_OK)
         else:
             return Response({"status": "error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
-
+        
+        
 class MenuItemViewSet(ModelViewSet):
     queryset = MenuItem.objects.all()
     serializer_class = MenuItemsSerializer
-    permission_classes = [RestaurantPermissions, CanViewContent]
 
 
 class CustomerUpdateByUserId(APIView):
