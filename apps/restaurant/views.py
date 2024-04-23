@@ -14,6 +14,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet, GenericViewSet
 from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.exceptions import NotFound
 
 from reservio.permissions import CanViewRestaurant, CanPostReview, IsRestaurantAdminOrReadOnly, CanManageReservations, CanViewContent, RestaurantPermissions
 from .filters import RestaurantFilter
@@ -178,6 +179,7 @@ class ReservationViewSet(ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        
 
     def check_reservation_conflict(self, validated_data):
         table = validated_data['table']
@@ -241,7 +243,8 @@ class ManageReservation(APIView):
                 serializer.save()
                 return Response({"status": "ok", "data": serializer.data}, status=status.HTTP_201_CREATED)
             return Response({"status": "error", "message": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
-
+            
+    
 
 class MenuCategoryViewSet(ModelViewSet):
     queryset = MenuCategory.objects.all()
@@ -274,14 +277,28 @@ class MenuItemsView(APIView):
         data = MenuItemsSerializer(items, many=True).data
         return Response({"status": "ok", "data": data})
 
-    def post(self, request):
+    def post(self, request, category_id):
         serializer = MenuItemsSerializer(data=request.data)
         if serializer.is_valid():
+            category = MenuCategory.objects.get(id=category_id)
+            serializer.validated_data['menu'] = category
             serializer.save()
+            return Response({"status": "ok", "data": serializer.data}, status=status.HTTP_201_CREATED)
         else:
-            print(serializer.errors)
+            return Response({"status": "error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def patch(self, request, category_id, item_id):  # Added item_id parameter
+        try:
+            item = MenuItem.objects.get(id=item_id)
+        except MenuItem.DoesNotExist:
+            raise NotFound(detail="Menu item not found")
 
-        return Response({"status": "ok", "data": serializer.data})
+        serializer = MenuItemsSerializer(item, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({"status": "ok", "data": serializer.data}, status=status.HTTP_200_OK)
+        else:
+            return Response({"status": "error", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MenuItemViewSet(ModelViewSet):

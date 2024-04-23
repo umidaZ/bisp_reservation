@@ -161,7 +161,7 @@ class ReservationSerializer(serializers.ModelSerializer):
 class MenuCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = MenuCategory
-        fields = ['id', 'restaurant', 'name', 'slug']
+        fields = ['id', 'restaurant', 'name']
 
 
 class MenuItemsSerializer(serializers.ModelSerializer):
