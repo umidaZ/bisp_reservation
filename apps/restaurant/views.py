@@ -107,7 +107,7 @@ class ReviewViewSet(ModelViewSet):
 
 class ReviewReplyViewSet(ModelViewSet):
     serializer_class = ReviewReplySerializer
-    permission_classes = [RestaurantPermissions]
+    # permission_classes = [RestaurantPermissions]
 
     def get_queryset(self):
         review_id = self.kwargs['review_id']

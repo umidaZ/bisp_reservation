@@ -51,24 +51,6 @@ class RestaurantSerializer(serializers.ModelSerializer):
 
     #     return instance
     
-    
-
-
-class ReviewSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Review
-        fields = ['id', 'restaurant', 'customer', 'rating', 'comment', 'timestamp']
-
-    def to_representation(self, instance):
-        representation = instance.__dict__
-        representation['customer'] = instance.customer.user.first_name
-        del representation['_state']
-        return representation
-
-    def create(self, validated_data):
-        return Review.objects.create(**validated_data)
-
-
 class ReviewReplySerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField()
     restaurant = serializers.PrimaryKeyRelatedField(read_only=True)
@@ -81,12 +63,44 @@ class ReviewReplySerializer(serializers.ModelSerializer):
         fields = ['id', 'restaurant', 'customer', 'review', 'reply_text', 'timestamp']
 
     def create(self, validated_data):
-        review_id = self.context['review_id']
-        restaurant_id = self.context['restaurant_id']
+        try:
+            review_id = self.context.get('review_id')
+            restaurant_id = self.context.get('restaurant_id')
+            customer_id = Review.objects.get(id=review_id).customer_id
+        except Review.DoesNotExist:
+            raise serializers.ValidationError("Review not found.")
 
-        customer_id = Review.objects.get(id=review_id).customer_id
+        return ReviewReply.objects.create(
+            review_id=review_id, restaurant_id=restaurant_id, customer_id=customer_id, **validated_data
+        ) 
 
-        return ReviewReply.objects.create(review_id=review_id, restaurant_id=restaurant_id, customer_id=customer_id, **validated_data)
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        # Additional representation customization if needed
+        return representation  
+
+
+class ReviewSerializer(serializers.ModelSerializer):
+    review_replies = serializers.SerializerMethodField()
+
+
+    class Meta:
+        model = Review
+        fields = ['id', 'restaurant', 'customer', 'rating', 'comment', 'timestamp', 'review_replies']
+
+    def get_review_replies(self, instance):
+        # Check if there are related review replies
+        review_replies = instance.review_replies.all()
+        if review_replies.exists():
+            return ReviewReplySerializer(review_replies, many=True).data
+        else:
+            return []
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['customer'] = instance.customer.user.first_name
+        return representation
+
 
 
 class TableSerializer(serializers.ModelSerializer):

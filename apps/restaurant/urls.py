@@ -15,6 +15,7 @@ router.register('payment_statuses', views.PaymentStatusViewSet)
 urlpatterns = [
     # path('restaurants/', views.RestaurantViewSet.as_view({'post': 'create', 'get': 'list', 'patch': 'update'}), name='restaurants'),
     path('restaurants/<int:restaurant_id>/reviews/', views.ReviewViewSet.as_view({'get': 'list', 'post': 'create'}), name='restaurant-reviews'),
+    path('restaurants/<int:restaurant_id>/reviews/<int:pk>/', views.ReviewViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'}), name='restaurant-review'),
     path('restaurants/<int:restaurant_id>/reviews/<int:review_id>/review_reply/', views.ReviewReplyViewSet.as_view({'get': 'list', 'post': 'create'}), name='review-reply'),
     path('restaurants/<int:restaurant_id>/tables/', views.TableViewSet.as_view({'get': 'list', 'post': 'create'}), name='restaurant-tables'),
     path('manage-reservation/<int:pk>/', views.ManageReservation.as_view(), name='manage-reservation'),

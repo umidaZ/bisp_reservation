@@ -256,7 +256,7 @@ class ReviewReply(models.Model):
     restaurant = models.ForeignKey(
         Restaurant, on_delete=models.CASCADE, related_name='reply')
     customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
-    review = models.ForeignKey(Review, on_delete=models.CASCADE)
+    review = models.ForeignKey(Review, related_name='review_replies', on_delete=models.CASCADE)
     reply_text = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
