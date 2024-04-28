@@ -220,7 +220,7 @@ class MenuItem(models.Model):
     photo = models.ImageField(upload_to='menu_photos/', blank=True)
 
     def __str__(self):
-        return f"{self.name} - ${self.unit_price}"
+        return f"{self.name} - {self.unit_price} sum"
 
     def save(self, *args, **kwargs):
         if not self.slug:
