@@ -23,6 +23,7 @@ urlpatterns = [
     path('my-reservations/<int:pk>/', views.ManageReservation.as_view(), name='my-reservations'),
     path('restaurants/<int:restaurant_id>/reservations/', views.RestaurantReservation.as_view(), name='restaurant-reservations'),
     path('restaurants/<int:restaurant_id>/menu-categories/', views.MenuCategoriesView.as_view(), name='menu-categories'),
+    path('restaurants/<int:restaurant_id>/menu-categories/<int:category_id>/', views.MenuCategoriesView.as_view(), name='menu-category-detail'),
     path('categories/<int:category_id>/menu-items/', views.MenuItemsView.as_view(), name='menu-items'),
     path('categories/<int:category_id>/menu-items/<int:item_id>/', views.MenuItemDetailView.as_view(), name='menu-item-detail'),
     path('menu-items/new/', views.MenuItemsView.as_view(), name='new-item'),
