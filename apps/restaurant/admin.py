@@ -128,6 +128,12 @@ class MenuCategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {
         'slug': ['name']
     }
+    list_display = ['restaurant', 'name']
+    search_fields = ('name__istartswith', 'restaurant__istartswith')
+    list_filter = ('restaurant',)
+    list_per_page = 10
+
+
 
 
 @admin.register(models.MenuItem)
@@ -135,11 +141,31 @@ class MenuCategoryAdmin(admin.ModelAdmin):
     prepopulated_fields = {
         'slug': ['name']
     }
+    list_display = ['name', 'unit_price', 'menu']
+    search_fields = ('name__istartswith', 'unit_price__istartswith')
+    list_filter = ('menu',)
+    list_per_page = 10
+
+
+@admin.register(models.Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ['restaurant', 'customer', 'rating']
+    search_fields = ('resturant__istartswith', 'customer__istartswith')
+    list_filter = ('rating', 'restaurant',)
+    list_per_page = 10
+
+
+
+@admin.register(models.ReviewReply)
+class ReviewReplyAdmin(admin.ModelAdmin):
+    list_display = ['restaurant', 'customer', 'review', 'reply_text']
+    search_fields = ('resturant__istartswith', 'customer__istartswith')
+    list_filter = ('restaurant',)
+    list_per_page = 10
+
 
 
 admin.site.register(models.PaymentStatus)
-admin.site.register(models.Review)
-admin.site.register(models.ReviewReply)
 admin.site.register(models.Payment)
 
 
